@@ -60,7 +60,15 @@ SCOPES = [
 # ─── Google Sheets Client ────────────────────────────────────────────
 
 def get_gspread_client():
-    creds = Credentials.from_service_account_file(GOOGLE_SERVICE_ACCOUNT_JSON, scopes=SCOPES)
+    sa_json = GOOGLE_SERVICE_ACCOUNT_JSON
+    # If the env var is a file path, load from file; otherwise treat as raw JSON string
+    if sa_json and os.path.isfile(sa_json):
+        creds = Credentials.from_service_account_file(sa_json, scopes=SCOPES)
+    elif sa_json:
+        sa_info = json.loads(sa_json)
+        creds = Credentials.from_service_account_info(sa_info, scopes=SCOPES)
+    else:
+        raise RuntimeError('GOOGLE_SERVICE_ACCOUNT_JSON is not set')
     return gspread.authorize(creds)
 
 
@@ -478,6 +486,12 @@ AI Resume Scoring Agent — Powered by Agentic AI
 app = FastAPI(title="AI Resume Scoring Agent", version="1.0")
 
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Railway."""
+    return {"status": "ok"}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home():
     """Serve the main web page."""
@@ -617,8 +631,9 @@ async def upload_resume(
 # ─── Run ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
     print("=" * 60)
     print("  AI Resume Scoring Agent - Web Application")
-    print("  Open in browser: http://localhost:8000")
+    print(f"  Open in browser: http://localhost:{port}")
     print("=" * 60)
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=port)
