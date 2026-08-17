@@ -492,6 +492,21 @@ async def health_check():
     return {"status": "ok"}
 
 
+@app.get("/api/debug")
+async def debug_env():
+    """Debug endpoint to check environment variable status."""
+    return JSONResponse(content={
+        "GOOGLE_SERVICE_ACCOUNT_JSON": "SET" if GOOGLE_SERVICE_ACCOUNT_JSON else "NOT SET",
+        "GOOGLE_SA_LENGTH": len(GOOGLE_SERVICE_ACCOUNT_JSON) if GOOGLE_SERVICE_ACCOUNT_JSON else 0,
+        "GOOGLE_SA_IS_FILE": os.path.isfile(GOOGLE_SERVICE_ACCOUNT_JSON) if GOOGLE_SERVICE_ACCOUNT_JSON else False,
+        "GOOGLE_SA_STARTS_WITH": (GOOGLE_SERVICE_ACCOUNT_JSON[:20] + '...') if GOOGLE_SERVICE_ACCOUNT_JSON and len(GOOGLE_SERVICE_ACCOUNT_JSON) > 20 else GOOGLE_SERVICE_ACCOUNT_JSON,
+        "MASTER_SHEET_ID": "SET" if MASTER_SHEET_ID else "NOT SET",
+        "DETAIL_SHEET_ID": "SET" if DETAIL_SHEET_ID else "NOT SET",
+        "SMTP_USER": "SET" if SMTP_USER else "NOT SET",
+        "SMTP_PASSWORD": "SET" if SMTP_PASSWORD else "NOT SET",
+    })
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home():
     """Serve the main web page."""
@@ -503,12 +518,19 @@ async def home():
 @app.get("/api/jobs")
 async def get_jobs():
     """Fetch job postings from Master Google Sheet."""
+    if not GOOGLE_SERVICE_ACCOUNT_JSON:
+        raise HTTPException(status_code=500, detail="GOOGLE_SERVICE_ACCOUNT_JSON environment variable is not set. Add it in Railway Variables tab.")
+    if not MASTER_SHEET_ID:
+        raise HTTPException(status_code=500, detail="MASTER_SHEET_ID environment variable is not set. Add it in Railway Variables tab.")
     try:
         client = get_gspread_client()
         master_ss = client.open_by_key(MASTER_SHEET_ID)
         master_ws = master_ss.worksheet('master')
         jobs = master_ws.get_all_records()
         return JSONResponse(content={"jobs": jobs})
+    except json.JSONDecodeError as e:
+        logger.exception('Invalid JSON in GOOGLE_SERVICE_ACCOUNT_JSON: %s', e)
+        raise HTTPException(status_code=500, detail=f"GOOGLE_SERVICE_ACCOUNT_JSON contains invalid JSON: {str(e)}")
     except Exception as e:
         logger.exception('Failed to fetch jobs: %s', e)
         raise HTTPException(status_code=500, detail=str(e))
