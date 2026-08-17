@@ -9,6 +9,7 @@ import io
 import re
 import json
 import uuid
+import base64
 import tempfile
 import logging
 from datetime import datetime
@@ -61,6 +62,10 @@ SCOPES = [
 
 def get_gspread_client():
     sa_json = GOOGLE_SERVICE_ACCOUNT_JSON
+    # Check for base64-encoded service account JSON (for Railway CLI compatibility)
+    sa_b64 = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON_B64')
+    if sa_b64:
+        sa_json = base64.b64decode(sa_b64).decode('utf-8')
     # If the env var is a file path, load from file; otherwise treat as raw JSON string
     if sa_json and os.path.isfile(sa_json):
         creds = Credentials.from_service_account_file(sa_json, scopes=SCOPES)
