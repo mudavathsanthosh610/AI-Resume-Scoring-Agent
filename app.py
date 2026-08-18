@@ -523,8 +523,8 @@ async def home():
 @app.get("/api/jobs")
 async def get_jobs():
     """Fetch job postings from Master Google Sheet."""
-    if not GOOGLE_SERVICE_ACCOUNT_JSON:
-        raise HTTPException(status_code=500, detail="GOOGLE_SERVICE_ACCOUNT_JSON environment variable is not set. Add it in Railway Variables tab.")
+    if not GOOGLE_SERVICE_ACCOUNT_JSON and not os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON_B64'):
+        raise HTTPException(status_code=500, detail="GOOGLE_SERVICE_ACCOUNT_JSON or GOOGLE_SERVICE_ACCOUNT_JSON_B64 environment variable is not set.")
     if not MASTER_SHEET_ID:
         raise HTTPException(status_code=500, detail="MASTER_SHEET_ID environment variable is not set. Add it in Railway Variables tab.")
     try:
