@@ -4,6 +4,9 @@ Candidates can upload resumes, get scored, and receive selection emails.
 Run: python app.py
 """
 
+## so here we are building the agent that can scane the resume and gives the points based on our profile
+
+## importing the library 
 import os
 import io
 import re
@@ -40,7 +43,7 @@ except Exception:
 
 load_dotenv()
 
-# ─── Configuration ────────────────────────────────────────────────────
+# Configuration 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 logger = logging.getLogger('resume-app')
 
@@ -54,11 +57,11 @@ SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
 FROM_EMAIL = os.getenv('FROM_EMAIL', SMTP_USER)
 
 SCOPES = [
-    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/spreadsheets',           # so here it will gives the persmission read and write the data in sheet 
     'https://www.googleapis.com/auth/drive'
 ]
 
-# ─── Google Sheets Client ────────────────────────────────────────────
+#  Google Sheets Client 
 
 def get_gspread_client():
     sa_json = GOOGLE_SERVICE_ACCOUNT_JSON
